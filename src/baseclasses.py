@@ -220,7 +220,7 @@ class audiobook:
         soxcommand = ['sox',  ]
         for i in range(0, len(self.chapters)):
             soxcommand.append(self.chapters[i].filename)
-        soxcommand += ['-t',  '.wav',  '-o',  '-']
+        soxcommand += ['-t',  '.wav',  '-']
 
         faaccommand = self.encodeString
         faaccommand = faaccommand.strip()
