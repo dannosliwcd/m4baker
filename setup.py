@@ -18,6 +18,6 @@ setup(name = 'm4baker',
         packages = ['m4baker',],
         package_dir = {'m4baker': 'src',},
         scripts = ['scripts/m4baker'],
-        data_files = [('/usr/share/applications', ['m4baker.desktop']),
-                        ('/usr/share/pixmaps',  ['m4baker.png'])]
+        data_files = [('share/applications', ['m4baker.desktop']),
+                        ('share/pixmaps',  ['m4baker.png'])]
         )
