@@ -25,7 +25,7 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
 version = QString('0.1.91')
-TITLE, CHAPTER, TRACK, DURATION, STARTTIME, FILENAME,  ENDTIME = range(7)
+TITLE, CHAPTER, TRACK, DURATION, STARTTIME, FILENAME,  ENDTIME = list(range(7))
 VERBOSE = False
 
 
@@ -44,7 +44,7 @@ def findSupportedInputFiles():
         soxProc.deleteLater()
     filetypes = re.search(r'AUDIO FILE FORMATS:(.*)',  soxHelp).groups(0)
     filetypes = filetypes[0].split()
-    return ['.'+ unicode(element) for element in filetypes]
+    return ['.'+ str(element) for element in filetypes]
 
 supportedInputFiles = findSupportedInputFiles()
 
@@ -55,9 +55,9 @@ def verboseOutput(standardOutput, errorOutput,  name):
     standardOutput = standardOutput.strip()
     errorOutput = errorOutput.strip()
     if standardOutput:
-        print name.decode('utf-8') + ': ' + standardOutput.decode('utf-8')
+        print(name.decode('utf-8') + ': ' + standardOutput.decode('utf-8'))
     if errorOutput:
-        print 'ERROR: ' + name.decode('utf-8') + ': ' + errorOutput.decode('utf-8')
+        print('ERROR: ' + name.decode('utf-8') + ': ' + errorOutput.decode('utf-8'))
 
 
 class chapter:
@@ -219,10 +219,10 @@ class audiobook:
 
     def encode(self):
         '''encode the entire book to one file'''
-        soxcommand = [u'sox',  ]
+        soxcommand = ['sox',  ]
         for i in range(0, len(self.chapters)):
             soxcommand.append(self.chapters[i].filename)
-        soxcommand += [u'-t',  u'.wav',  u'-o',  u'-']
+        soxcommand += ['-t',  '.wav',  '-o',  '-']
 
         faaccommand = QString(self.encodeString)
         faaccommand = faaccommand.trimmed()
@@ -231,7 +231,7 @@ class audiobook:
         #we do this after splitting the string to avoid splitting the filename
         faaccommand = [element.replace(QString('<output_file>'),
                                        self.outfileName) for element in faaccommand]
-        faaccommand.append(u'-')
+        faaccommand.append('-')
 
         self.soxProc = QProcess()
         self.faacProc = QProcess()
@@ -253,7 +253,7 @@ class audiobook:
         trimmedOutfileName = self.outfileName.section('.',0,-2)
         chapfileName = trimmedOutfileName + QString('.chapters.txt')
         #we need codecs.open because this file can contain non ascii characters
-        chapfile = codecs.open(unicode(chapfileName),  encoding='utf-8',  mode='w')
+        chapfile = codecs.open(str(chapfileName),  encoding='utf-8',  mode='w')
         for element in self.chapters:
             hours,  minutes,  seconds = secConverter(element.startTime)
             chapfile.write('%.2d:%.2d:%#06.3f %s - %s\n' % (hours, minutes,
@@ -282,20 +282,20 @@ class audiobook:
             taggerProc.deleteLater()
 
 
-        if hasattr(self,  u'cover'):
+        if hasattr(self,  'cover'):
             #a coverfile was specified
             pixmap = self.cover
             #rescale the cover so the ipod can handle it
             pixmap = pixmap.scaledToHeight(480)
-            pixmap.save(self.outfileName + u'.png')
+            pixmap.save(self.outfileName + '.png')
             taggerProc = QProcess()
-            taggerProc.start(u'mp4art',  [u'--add',  self.outfileName + u'.png',  self.outfileName])
+            taggerProc.start('mp4art',  ['--add',  self.outfileName + '.png',  self.outfileName])
             if taggerProc.waitForFinished():
-                verboseOutput(str(taggerProc.readAllStandardOutput()), str(taggerProc.readAllStandardError()),  u'MP4ART')
+                verboseOutput(str(taggerProc.readAllStandardOutput()), str(taggerProc.readAllStandardError()),  'MP4ART')
                 taggerProc.deleteLater()
             if not VERBOSE:
                 #same as above, file might be helpful in verbose mode
-                os.remove(unicode(self.outfileName) + u'.png')
+                os.remove(str(self.outfileName) + '.png')
 
 
     def getMinSplitDuration(self):
@@ -330,10 +330,10 @@ class audiobookContainer(list):
                 worklist[-1].outfileName = worklist[-1].outfileName[0:-4]+ str(splitNumber) + '.m4b'
 
                 #trim last chapters
-                worklist[-2].remChaps(range(len(worklist[-2].chapters) -
-                                    (len(self[booknum].chapters) - i ),  len(worklist[-2].chapters)))
+                worklist[-2].remChaps(list(range(len(worklist[-2].chapters) -
+                                    (len(self[booknum].chapters) - i ),  len(worklist[-2].chapters))))
                 #trim first chapters
-                worklist[-1].remChaps(range(0,  i))
+                worklist[-1].remChaps(list(range(0,  i)))
 
                 sumDuration = self[booknum].chapters[i].duration
                 splitNumber += 1
@@ -390,20 +390,20 @@ class audiobookTreeModel(QAbstractItemModel):
                 if column == TITLE:
                     return QVariant(chapter.title)
                 if column == CHAPTER:
-                    return QVariant(u'%.2d' % (chapnum+1))
+                    return QVariant('%.2d' % (chapnum+1))
                 if column == TRACK:
-                    return QVariant(u'%.2d' % chapter.trackNumber)
+                    return QVariant('%.2d' % chapter.trackNumber)
                 if column == DURATION:
-                    duration = u'%.2d:%.2d:%#06.3f' % secConverter(chapter.duration)
+                    duration = '%.2d:%.2d:%#06.3f' % secConverter(chapter.duration)
                     return QVariant(duration)
                 if column == STARTTIME:
-                    startTime = u'%.2d:%.2d:%#06.3f' % secConverter(chapter.startTime)
+                    startTime = '%.2d:%.2d:%#06.3f' % secConverter(chapter.startTime)
                     return QVariant(startTime)
                 if column == FILENAME:
                     filename = chapter.filename
                     return QVariant(filename)
                 if column == ENDTIME:
-                    endTime = u'%.2d:%.2d:%#06.3f' % secConverter(chapter.duration + chapter.startTime)
+                    endTime = '%.2d:%.2d:%#06.3f' % secConverter(chapter.duration + chapter.startTime)
                     return QVariant(endTime)
             else:
                 #index points to a audiobook
@@ -623,7 +623,7 @@ class audiobookTreeModel(QAbstractItemModel):
             last = chapterIndexes[-1].row()
             parent = chapterIndexes[0].parent()
             self.beginRemoveRows(parent,  first,  last)
-            self.audiobookList[parent.row()].remChaps(range(first,  last+1))
+            self.audiobookList[parent.row()].remChaps(list(range(first,  last+1)))
             self.endRemoveRows()
 
     def move(self,  indexes,  direction):
@@ -651,7 +651,7 @@ class audiobookTreeModel(QAbstractItemModel):
 
         if direction == 'up':
             #move chapters up
-            for booknum in sortedChapnums.iterkeys():
+            for booknum in sortedChapnums.keys():
                 if 0 in sortedChapnums[booknum]:
                     # the first chapter will be moved up
                     oldParent = indexes[0].parent()
@@ -672,7 +672,7 @@ class audiobookTreeModel(QAbstractItemModel):
 
         if direction == 'down':
             #move chapters down
-            for booknum in sortedChapnums.iterkeys():
+            for booknum in sortedChapnums.keys():
                 lastchap = (len(self.audiobookList[booknum].chapters)-1)
                 if lastchap in sortedChapnums[booknum]:
                     # the last chapter will be moved down

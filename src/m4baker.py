@@ -22,8 +22,8 @@ import sys
 from optparse import OptionParser
 from PyQt4 import QtCore, QtGui
 
-from mainWindow import MainWindow
-import baseclasses
+from .mainWindow import MainWindow
+from . import baseclasses
 
 
 # The following  "which()" function was taken from Stack Overflow

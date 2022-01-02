@@ -66,8 +66,8 @@ class Ui_aboutDialog(object):
 "\n"
 "© 2010, Kilian Lackhove (kilian.lackhove@gmail.com)", None, QtGui.QApplication.UnicodeUTF8))
 
-import resources_rc
-import resources_rc
+from . import resources_rc
+from . import resources_rc
 
 if __name__ == "__main__":
     import sys

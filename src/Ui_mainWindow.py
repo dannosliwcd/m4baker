@@ -350,8 +350,8 @@ class Ui_MainWindow(object):
         self.action_help.setText(QtGui.QApplication.translate("MainWindow", "Help", None, QtGui.QApplication.UnicodeUTF8))
         self.action_help.setToolTip(QtGui.QApplication.translate("MainWindow", "get help", None, QtGui.QApplication.UnicodeUTF8))
 
-import resources_rc
-import resources_rc
+from . import resources_rc
+from . import resources_rc
 
 if __name__ == "__main__":
     import sys

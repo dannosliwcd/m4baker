@@ -24,7 +24,7 @@ Module implementing splitDialog.
 from PyQt4.QtGui import QDialog
 from PyQt4.QtCore import pyqtSignature
 
-from Ui_splitDialog import Ui_splitDialog
+from .Ui_splitDialog import Ui_splitDialog
 
 class splitDialog(QDialog, Ui_splitDialog):
     """

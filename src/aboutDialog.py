@@ -24,9 +24,9 @@ Module implementing aboutDialog.
 from PyQt4.QtGui import QDialog
 from PyQt4.QtCore import pyqtSignature
 
-from Ui_aboutDialog import Ui_aboutDialog
+from .Ui_aboutDialog import Ui_aboutDialog
 
-from baseclasses import version
+from .baseclasses import version
 
 class aboutDialog(QDialog, Ui_aboutDialog):
     """

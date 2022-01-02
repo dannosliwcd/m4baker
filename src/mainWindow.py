@@ -23,13 +23,13 @@ Module implementing MainWindow.
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
-from Ui_mainWindow import Ui_MainWindow
+from .Ui_mainWindow import Ui_MainWindow
 
-from baseclasses import *
-from splitDialog import splitDialog
-from aboutDialog import aboutDialog
+from .baseclasses import *
+from .splitDialog import splitDialog
+from .aboutDialog import aboutDialog
 
-TITLE, CHAPTER, TRACK, DURATION, STARTTIME, FILENAME,  ENDTIME = range(7)
+TITLE, CHAPTER, TRACK, DURATION, STARTTIME, FILENAME,  ENDTIME = list(range(7))
 
 def makeClickable(widget):
 
@@ -301,7 +301,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                                                                                 Qt.DisplayRole).toString()
         endTime= self.model.data(self.model.index(current.row(),  TITLE,  current.parent()),
                                                                                           Qt.UserRole)['endTime']
-        endTime = u'%.2d:%.2d:%#06.3f' % secConverter(endTime)
+        endTime = '%.2d:%.2d:%#06.3f' % secConverter(endTime)
 
         self.chapterTitleEdit.setText(title)
         self.startTimeEdit.setText(startTime)
