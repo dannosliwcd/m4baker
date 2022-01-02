@@ -20,7 +20,7 @@
 
 import sys
 from optparse import OptionParser
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtWidgets
 
 from .mainWindow import MainWindow
 from . import baseclasses
@@ -55,13 +55,13 @@ def main():
                       help= 'Be more verbose')
     (options, args) = parser.parse_args(sys.argv)
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     ui = MainWindow()
     #check for dependencies
     for dependency in ['faac',  'sox',  'soxi',  'mp4chaps',  'mp4tags',  'mp4art']:
         if which(dependency) == None:
-            msgBox = QtGui.QMessageBox()
-            msgBox.setIcon(QtGui.QMessageBox.Critical)
+            msgBox = QtWidgets.QMessageBox()
+            msgBox.setIcon(QtWidgets.QMessageBox.Critical)
             msgBox.setText('Missing dependency: '+dependency+
                 ' is not properly installed. \nPlease read INSTALL.txt \nExiting.')
             msgBox.exec_()

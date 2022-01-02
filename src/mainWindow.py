@@ -20,8 +20,8 @@
 """
 Module implementing MainWindow.
 """
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 
 from .Ui_mainWindow import Ui_MainWindow
 
@@ -96,18 +96,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.progessDelegate = progressBarDelegate()
         self.dataTreeView.setItemDelegateForColumn(1,  self.progessDelegate)
 
-        self.connect(self.dataTreeView.selectionModel(),
-                     SIGNAL('currentChanged(QModelIndex, QModelIndex)'),
-                            self.on_dataTreeView_currentItemChanged)
-        self.connect(self.model,  SIGNAL('dataChanged(QModelIndex,QModelIndex)'),  self.dataChanged)
-        self.connect(self.model,  SIGNAL('expand(QModelIndex)'),  self.dataTreeView.expand)
-        #trying the new style of connecting signals
+        self.dataTreeView.selectionModel().currentChanged.connect(self.on_dataTreeView_currentItemChanged)
+        self.model.dataChanged.connect(self.dataChanged)
+        self.model.expand.connect(self.dataTreeView.expand)
         self.model.processingDone.connect(self.on_processingDone)
 
         self.delfilter = delkeyFilter()
         self.dataTreeView.installEventFilter(self.delfilter)
-        self.connect(self.delfilter, SIGNAL('delkeyPressed()'),
-                                    self.on_actionRemove_triggered)
+        self.delfilter.delkeyPressed.connect(self.on_actionRemove_triggered)
 
         self.returnFilter = returnkeyFilter()
         self.dataTreeView.installEventFilter(self.returnFilter)
@@ -146,7 +142,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             event.ignore()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_actionAddAudiobook_triggered(self):
         """
         Slot documentation goes here.
@@ -155,7 +151,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         formats = ["*%s" % format for format in supportedInputFiles]
 
-        fnames = QFileDialog.getOpenFileNames(
+        fnames, _ = QFileDialog.getOpenFileNames(
                                               self,
                                                "Choose audio files to create audiobook from",
                                                self.currentDir,
@@ -163,13 +159,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         if fnames:
             #fnames = [unicode(element) for element in fnames]
-            self.currentDir =  fnames[-1].section(os.sep,0,-2)
+            self.currentDir = os.path.dirname(fnames[-1])
             newbook = audiobook([chapter(element) for element in fnames])
             self.model.addAudiobooks(newbook,  current)
 
             self.updateTree()
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_actionMoveDown_triggered(self):
         """
         Slot documentation goes here.
@@ -187,7 +183,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_actionRemove_triggered(self):
         """
         Slot documentation goes here.
@@ -206,13 +202,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.updateTree()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_actionAddChapter_triggered(self):
         """
         Slot documentation goes here.
         """
         formats = ["*%s" % format for format in supportedInputFiles]
-        fnames = QFileDialog.getOpenFileNames(
+        fnames, _ = QFileDialog.getOpenFileNames(
                                               self,
                                               "Choose audio files to append to audiobook",
                                               self.currentDir,
@@ -220,7 +216,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
         if fnames:
-            self.currentDir =  fnames[-1].section(os.sep,0,-2)
+            self.currentDir =  os.path.dirname(fnames[-1])
             #fnames = [unicode(element) for element in fnames]
             chaplist = [chapter(element) for element in fnames]
             current = self.dataTreeView.currentIndex()
@@ -229,7 +225,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             #TODO: maybe it is smarter to add the chapter after current item?
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_actionSortByFilename_triggered(self):
         """
         Slot documentation goes here.
@@ -239,7 +235,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.updateTree()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_actionSortByTracknumber_triggered(self):
         """
         Slot documentation goes here.
@@ -249,7 +245,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.updateTree()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_actionProcess_triggered(self):
         """
         Slot documentation goes here.
@@ -268,7 +264,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.model.process()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_actionMoveUp_2_triggered(self):
         """
         Slot documentation goes here.
@@ -292,13 +288,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         current = self.dataTreeView.currentIndex()
 
         title = self.model.data(self.model.index(current.row(),  TITLE,  current.parent()),
-                                                                                         Qt.DisplayRole).toString()
+                                                                                         Qt.DisplayRole).value()
         startTime = self.model.data(self.model.index(current.row(),  STARTTIME,  current.parent()),
-                                                                                                  Qt.DisplayRole).toString()
+                                                                                                  Qt.DisplayRole).value()
         duration = self.model.data(self.model.index(current.row(),  DURATION,  current.parent()),
-                                                                                                Qt.DisplayRole).toString()
+                                                                                                Qt.DisplayRole).value()
         filename = self.model.data(self.model.index(current.row(),  FILENAME,  current.parent()),
-                                                                                                Qt.DisplayRole).toString()
+                                                                                                Qt.DisplayRole).value()
         endTime= self.model.data(self.model.index(current.row(),  TITLE,  current.parent()),
                                                                                           Qt.UserRole)['endTime']
         endTime = '%.2d:%.2d:%#06.3f' % secConverter(endTime)
@@ -343,7 +339,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.coverLabel.setText('(click to change)')
 
 
-    @pyqtSignature("QModelIndex*, QModelIndex*")
+    @pyqtSlot(QModelIndex, QModelIndex)
     def on_dataTreeView_currentItemChanged(self, current, previous):
         """
         Slot documentation goes here.
@@ -388,7 +384,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.actionMoveDown.setEnabled(False)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_chapterFileButton_clicked(self):
         """
         Slot documentation goes here.
@@ -396,47 +392,47 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         current = self.dataTreeView.currentIndex()
 
         formats = ["*%s" % format for format in supportedInputFiles]
-        fname = QFileDialog.getOpenFileName(
+        fname, _ = QFileDialog.getOpenFileName(
                                             self,
                                             "change chapter source file",
                                             self.currentDir,
                                             'audio files (%s)' % " ".join(formats))
 
 
-        if  not fname.isEmpty():
-            self.currentDir =  fname.section(os.sep,0,-2)
+        if  not fname == '':
+            self.currentDir =  os.path.dirname(fname)
             self.model.setData(self.model.index(current.row(), FILENAME,  current.parent()), QVariant(fname))
             self.populateChapterProperties()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_outfileButton_clicked(self):
         """
         Slot documentation goes here.
         """
         current = self.dataTreeView.currentIndex()
 
-        fname = QFileDialog.getSaveFileName(
+        fname, _ = QFileDialog.getSaveFileName(
                                             self,
                                             'choose audiobook output file',
                                             self.currentDir,
                                             "Audiobook files (*.m4b)")
-        if not fname.isEmpty():
-            self.currentDir =  fname.section(os.sep,0,-2)
-            if not fname.endsWith('.m4b'):
+        if not fname == '':
+            self.currentDir =  os.path.dirname(fname)
+            if not fname.endswith('.m4b'):
                 fname += ".m4b"
             self.model.setData(self.model.index(current.row(), FILENAME,  current.parent()), QVariant(fname))
             self.populateAudiobookProperties()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_action_About_triggered(self):
         dialog = aboutDialog()
         if dialog.exec_():
             pass
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_actionSplit_triggered(self):
         """
         Slot documentation goes here.
@@ -461,12 +457,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.updateTree()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_coverLabel_clicked(self):
 
         current = self.dataTreeView.currentIndex()
 
-        fname = QFileDialog.getOpenFileName(
+        fname, _ = QFileDialog.getOpenFileName(
                                             self,
                                             "Choose a cover file",
                                             self.currentDir,
@@ -475,8 +471,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 					    )
 
 
-        if  not fname.isEmpty():
-            self.currentDir =  fname.section(os.sep,0,-2)
+        if  not fname == '':
+            self.currentDir =  os.path.dirname(fname)
             self.model.setData(self.model.index(current.row(),  0,  current.parent()),
                                                                                     {'cover':QPixmap(fname)},  Qt.UserRole)
             self.populateAudiobookProperties()
@@ -506,7 +502,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.dataTreeView.reset()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_chapterTitleEdit_editingFinished(self):
         """
         Slot documentation goes here.
@@ -515,7 +511,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         text = self.chapterTitleEdit.text()
         self.model.setData(self.model.index(current.row(),  TITLE,  current.parent()), QVariant(text))
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_faacEdit_editingFinished(self):
         """
         Slot documentation goes here.
@@ -525,7 +521,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         value = {'encodeString':QVariant(text)}
         self.model.setData(self.model.index(current.row(),  0,  QModelIndex()), value,  Qt.UserRole)
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_titleEdit_editingFinished(self):
         """
         Slot documentation goes here.
@@ -534,7 +530,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         current = self.dataTreeView.currentIndex()
         self.model.setData(self.model.index(current.row(),  TITLE,  QModelIndex()), QVariant(text))
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_yearEdit_editingFinished(self):
         """
         Slot documentation goes here.
@@ -543,7 +539,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         current = self.dataTreeView.currentIndex()
         self.model.setData(self.model.index(current.row(),  TITLE,  QModelIndex()), QVariant(text))
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_authorEdit_editingFinished(self):
         """
         Slot documentation goes here.
@@ -553,7 +549,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         value = {'author':QVariant(text)}
         self.model.setData(self.model.index(current.row(),  0,  QModelIndex()), value,  Qt.UserRole)
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def on_action_help_triggered(self):
         """
         Slot documentation goes here.

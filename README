@@ -9,7 +9,7 @@ Before installing M4Baker, install following dependencies:
  * Python 3
    http://python.org
 
- * PyQt 4.6 with Qt 4.5 or newer
+ * PyQt 5
    http://www.riverbankcomputing.co.uk/software/pyqt/intro
    http://www.trolltech.com/products/qt/
 

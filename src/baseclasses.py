@@ -21,10 +21,10 @@
 '''the classes shared by the CLI and the GUI interface'''
 
 import os, re,  codecs
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
 
-version = QString('0.1.91')
+version = '0.1.91'
 TITLE, CHAPTER, TRACK, DURATION, STARTTIME, FILENAME,  ENDTIME = list(range(7))
 VERBOSE = False
 
@@ -40,7 +40,7 @@ def findSupportedInputFiles():
     soxProc = QProcess()
     soxProc.start('sox',  ['-h',])
     if soxProc.waitForFinished():
-        soxHelp = str(soxProc.readAllStandardOutput())
+        soxHelp = bytes(soxProc.readAllStandardOutput()).decode()
         soxProc.deleteLater()
     filetypes = re.search(r'AUDIO FILE FORMATS:(.*)',  soxHelp).groups(0)
     filetypes = filetypes[0].split()
@@ -63,15 +63,15 @@ def verboseOutput(standardOutput, errorOutput,  name):
 class chapter:
     '''This class represents one chapter of an audiobook    '''
 
-    def __init__(self,  filename = QString(),  audiobook = QString()):
+    def __init__(self,  filename = '',  audiobook = ''):
         '''init the chapter with standard minimum data'''
 
-        if not filename.isEmpty():
+        if not filename == '':
             self.setFile(filename)
             return
         self.audiobook = audiobook
         self.duration = 0
-        self.title = QString('unknown chapter title')
+        self.title = 'unknown chapter title'
         self.trackNumber = 0
         self.startTime = 0
 
@@ -86,7 +86,7 @@ class chapter:
         soxiProc.start('soxi',  [self.filename,])
         if soxiProc.waitForFinished():
             # some weird encoding magic to deal with special characters
-            soxioutput = str(soxiProc.readAllStandardOutput()).decode('utf-8')
+            soxioutput = bytes(soxiProc.readAllStandardOutput()).decode('utf-8')
             self.__soxioutput = soxioutput
             soxiProc.deleteLater()
 
@@ -94,7 +94,7 @@ class chapter:
         #calculate duration in seconds
         regexp = QRegExp(r'''(\d\d):(\d\d):(\d\d.\d\d)''')
         regexp.indexIn(self.__soxioutput)
-        (hours, minutes,  seconds) = (regexp.cap(1).toFloat()[0],  regexp.cap(2).toFloat()[0],  regexp.cap(3).toFloat()[0])
+        (hours, minutes,  seconds) = (float(regexp.cap(1)),  float(regexp.cap(2)),  float(regexp.cap(3)))
         self.duration = float(seconds) + 60.0*float(minutes) + 60*60.0*float(hours)
 
         #get title from soxi
@@ -106,24 +106,22 @@ class chapter:
         else:
         #if self.title.size() == 0:
             # guess the title if it wasn t found in metadata
-            self.title = filename.section(os.sep,-1,-1).section('.',0,-2)
+            self.title = os.path.splitext(os.path.basename(filename))[0]
 
         #get tracknumber from soxi
         regexp = QRegExp(r"""Tracknumber=(.*)\n""")
         regexp.setMinimal(1)
         pos = regexp.indexIn(self.__soxioutput)
         if pos >= 0:
-            (self.trackNumber,  OK) = regexp.cap(1).toInt()
+            self.trackNumber = int(regexp.cap(1))
         else:
-        #if not OK:
             # get tracknumber from filename
-            basename = filename.section(os.sep,-1,-1).section('.',0,0)
+            basename = os.path.splitext(os.path.basename(filename))[0]
             regexp = QRegExp(r"""(\d+)""")
             pos = regexp.indexIn(basename)
             if pos >= 0:
-                (self.trackNumber,  OK) = regexp.cap(1).toInt()
+                self.trackNumber = int(regexp.cap(1))
             else:
-            #if not OK:
                 self.trackNumber = 0
 
         #set peliminary value for the startTime
@@ -174,8 +172,8 @@ class audiobook:
         (self.title,  self.author,  self.year) = chapters[0].getBookdata()
 
         #set preliminary value for outfileName and encodestring
-        self.outfileName = self.author + ' - ' + self.title + QString('.m4b')
-        self.encodeString =QString('faac -o <output_file>' )
+        self.outfileName = self.author + ' - ' + self.title + '.m4b'
+        self.encodeString = 'faac -o <output_file>'
 
         self.progress = 0
 
@@ -224,12 +222,11 @@ class audiobook:
             soxcommand.append(self.chapters[i].filename)
         soxcommand += ['-t',  '.wav',  '-o',  '-']
 
-        faaccommand = QString(self.encodeString)
-        faaccommand = faaccommand.trimmed()
-        #faaccommand needs to be a QString for the regex below
+        faaccommand = self.encodeString
+        faaccommand = faaccommand.strip()
         faaccommand = faaccommand.split(' ')
         #we do this after splitting the string to avoid splitting the filename
-        faaccommand = [element.replace(QString('<output_file>'),
+        faaccommand = [element.replace('<output_file>',
                                        self.outfileName) for element in faaccommand]
         faaccommand.append('-')
 
@@ -250,8 +247,8 @@ class audiobook:
         '''create a chapterfile for mp4chaps and make it write the chapters to the outfileName , remove chapterfile'''
 
         #trim the file extension
-        trimmedOutfileName = self.outfileName.section('.',0,-2)
-        chapfileName = trimmedOutfileName + QString('.chapters.txt')
+        trimmedOutfileName = os.path.splitext(self.outfileName)[0]
+        chapfileName = trimmedOutfileName + '.chapters.txt'
         #we need codecs.open because this file can contain non ascii characters
         chapfile = codecs.open(str(chapfileName),  encoding='utf-8',  mode='w')
         for element in self.chapters:
@@ -263,7 +260,7 @@ class audiobook:
         taggerProc = QProcess()
         taggerProc.start('mp4chaps',  ['-i',  self.outfileName])
         if taggerProc.waitForFinished():
-            verboseOutput(str(taggerProc.readAllStandardOutput()), str(taggerProc.readAllStandardError()),
+            verboseOutput(bytes(taggerProc.readAllStandardOutput()).decode(), bytes(taggerProc.readAllStandardError()).decode(),
                                                                                                         'MP4CHAPS')
             taggerProc.deleteLater()
 
@@ -278,7 +275,7 @@ class audiobook:
         taggerProc.start('mp4tags',  ['-A',  self.title,  '-a',  self.author,  '-g',  'Audiobook',  '-s',
                     self.title,  '-y',  self.year,  self.outfileName])
         if taggerProc.waitForFinished():
-            verboseOutput(str(taggerProc.readAllStandardOutput()), str(taggerProc.readAllStandardError()),  'MP4TAGS')
+            verboseOutput(bytes(taggerProc.readAllStandardOutput()).decode(), bytes(taggerProc.readAllStandardError()).decode(),  'MP4TAGS')
             taggerProc.deleteLater()
 
 
@@ -291,7 +288,7 @@ class audiobook:
             taggerProc = QProcess()
             taggerProc.start('mp4art',  ['--add',  self.outfileName + '.png',  self.outfileName])
             if taggerProc.waitForFinished():
-                verboseOutput(str(taggerProc.readAllStandardOutput()), str(taggerProc.readAllStandardError()),  'MP4ART')
+                verboseOutput(bytes(taggerProc.readAllStandardOutput()).decode(), bytes(taggerProc.readAllStandardError()).decode(),  'MP4ART')
                 taggerProc.deleteLater()
             if not VERBOSE:
                 #same as above, file might be helpful in verbose mode
@@ -345,6 +342,7 @@ class audiobookContainer(list):
 class audiobookTreeModel(QAbstractItemModel):
 
     processingDone = pyqtSignal()
+    expand = pyqtSignal(QModelIndex)
 
     def __init__(self, parent=None):
 
@@ -481,19 +479,19 @@ class audiobookTreeModel(QAbstractItemModel):
                 chapter = self.audiobookList[booknum].chapters[chapnum]
 
                 if column == TITLE:
-                    chapter.title = value.toString()
+                    chapter.title = value.value()
                 if column == FILENAME:
-                    chapter.filename = value.toString()
+                    chapter.filename = value.value()
             else:
                 #for audiobooks
                 booknum = index.row()
                 audiobook = self.audiobookList[booknum]
                 if column == TITLE:
-                    audiobook.title = value.toString()
+                    audiobook.title = value.value()
                 if column == FILENAME:
-                    audiobook.outfileName = value.toString()
+                    audiobook.outfileName = value.value()
                 if column == CHAPTER:
-                    audiobook.progress,  ok = value.toInt()
+                    audiobook.progress = int(value.value())
 
         elif role == Qt.UserRole:
             column = index.column()
@@ -505,15 +503,15 @@ class audiobookTreeModel(QAbstractItemModel):
                 if value.get('cover'):
                     self.audiobookList[index.row()].cover = value['cover']
                 if value.get('author'):
-                    self.audiobookList[index.row()].author = value['author'].toString()
+                    self.audiobookList[index.row()].author = str(value['author'].value())
                 if value.get('year'):
-                    self.audiobookList[index.row()].year = value['year'].toString()
+                    self.audiobookList[index.row()].year = str(value['year'].value())
                 if value.get('encodeString'):
-                    self.audiobookList[index.row()].encodeString= value['encodeString'].toString()
+                    self.audiobookList[index.row()].encodeString= str(value['encodeString'].value())
 
 
         self.dirty = True
-        self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -568,7 +566,7 @@ class audiobookTreeModel(QAbstractItemModel):
         self.audiobookList.append(newbook)
         self.endInsertRows()
 
-        self.emit(SIGNAL('expand(QModelIndex)'),  self.index(booknum ,  0,  parent))
+        self.expand.emit(self.index(booknum ,  0,  parent))
 
         return True
 
@@ -587,7 +585,7 @@ class audiobookTreeModel(QAbstractItemModel):
             self.audiobookList[booknum ].addChap(element)
         self.endInsertRows()
 
-        self.emit(SIGNAL('expand(QModelIndex)'),  current)
+        self.expand.emit(current)
 
         return True
 
@@ -658,7 +656,7 @@ class audiobookTreeModel(QAbstractItemModel):
                     newParent = self.index(booknum -1,  0, oldParent.parent())
                     self.beginMoveRows(oldParent,  indexes[0].row(),  indexes[0].row(),
                                        newParent,   self.rowCount(newParent))
-                    self.emit(SIGNAL('expand(QModelIndex)'), newParent )
+                    self.expand.emit(newParent)
 
                     tempchap = self.audiobookList[booknum].chapters.pop(0)
                     self.audiobookList[booknum -1].addChap(tempchap)
@@ -680,7 +678,7 @@ class audiobookTreeModel(QAbstractItemModel):
                     newParent = self.index(booknum +1,  0, oldParent.parent())
                     self.beginMoveRows(oldParent,  indexes[-1].row(),  indexes[-1].row(),
                                        newParent,   0)
-                    self.emit(SIGNAL('expand(QModelIndex)'), newParent)
+                    self.expand.emit(newParent)
 
                     tempchap = self.audiobookList[booknum].chapters.pop(lastchap)
                     self.audiobookList[booknum +1].addChap(tempchap,  0)
@@ -709,7 +707,7 @@ class audiobookTreeModel(QAbstractItemModel):
 
         booknum = parent.row()
         self.audiobookList[booknum].sort(sortBy)
-        self.emit(SIGNAL('layoutChanged()'))
+        self.layoutChanged.emit()
         return True
 
 
@@ -732,7 +730,7 @@ class audiobookTreeModel(QAbstractItemModel):
         if len(self.audiobookList[self.processBooknum].chapters) == 0:
             i = self.processBooknum +1
             if len(self.audiobookList) == i:
-                self.emit(SIGNAL('processingDone()'))
+                self.processingDone.emit()
                 return
             else:
                 self.processBooknum += 1
@@ -740,19 +738,17 @@ class audiobookTreeModel(QAbstractItemModel):
                 return
 
         self.audiobookList[self.processBooknum].encode()
-        self.connect(self.audiobookList[self.processBooknum].faacProc,
-                     SIGNAL("readyReadStandardError()"), self.__updateProgress)
-        self.connect(self.audiobookList[self.processBooknum].faacProc,
-                     SIGNAL("finished(int)"),  self.__encFinished)
+        self.audiobookList[self.processBooknum].faacProc.readyReadStandardError.connect(self.__updateProgress)
+        self.audiobookList[self.processBooknum].faacProc.finished.connect(self.__encFinished)
 
 
     def __updateProgress(self):
-        errorString = str(self.audiobookList[self.processBooknum].soxProc.readAllStandardError())
-        standardString = str(self.audiobookList[self.processBooknum].soxProc.readAllStandardOutput())
+        errorString = bytes(self.audiobookList[self.processBooknum].soxProc.readAllStandardError()).decode()
+        standardString = bytes(self.audiobookList[self.processBooknum].soxProc.readAllStandardOutput()).decode()
         verboseOutput(standardString,  errorString,  'SOX')
 
-        errorString = str(self.audiobookList[self.processBooknum].faacProc.readAllStandardError())
-        standardString = str(self.audiobookList[self.processBooknum].faacProc.readAllStandardOutput())
+        errorString = bytes(self.audiobookList[self.processBooknum].faacProc.readAllStandardError()).decode()
+        standardString = bytes(self.audiobookList[self.processBooknum].faacProc.readAllStandardOutput()).decode()
         #faac writes everything to Error, so we use the error output as a standard output
         verboseOutput(errorString,  standardString,  'FAAC')
         try:
@@ -765,8 +761,8 @@ class audiobookTreeModel(QAbstractItemModel):
     def __encFinished(self,  exitCode):
         self.audiobookList[self.processBooknum].tagChapters()
         self.audiobookList[self.processBooknum].tagMeta()
-        self.disconnect(self.audiobookList[self.processBooknum].faacProc, SIGNAL("readyReadStandardError()"), self.__updateProgress)
-        self.disconnect(self.audiobookList[self.processBooknum].faacProc,  SIGNAL("finished(int)"),  self.__encFinished)
+        self.audiobookList[self.processBooknum].faacProc.readyReadStandardError.disconnect(self.__updateProgress)
+        self.audiobookList[self.processBooknum].faacProc.finished.disconnect(self.__encFinished)
         self.audiobookList[self.processBooknum].faacProc.deleteLater()
         self.audiobookList[self.processBooknum].soxProc.deleteLater()
 
@@ -777,7 +773,7 @@ class audiobookTreeModel(QAbstractItemModel):
             self.processBooknum += 1
             self.process()
         else:
-            self.emit(SIGNAL('processingDone()'))
+            self.processingDone.emit()
 
 
 class progressBarDelegate(QItemDelegate):
@@ -790,17 +786,18 @@ class progressBarDelegate(QItemDelegate):
             #chapter
             QItemDelegate.paint(self, painter, option, index)
         else:
-            options = QStyleOptionProgressBarV2()
+            options = QStyleOptionProgressBar()
             options.rect = option.rect
             options.minimum = 1
             options.maximum = 100
             options.textVisible = True
-            percent, ok = index.model().data(index, Qt.DisplayRole).toInt()
-            if not ok:
+            try:
+                percent = int(index.model().data(index, Qt.DisplayRole).value())
+            except ValueError:
                 percent = 0
             if percent ==0:
                 return
             else:
                 options.progress = percent
-                options.text = QString('%d%%'%percent)
+                options.text = '%d%%'%percent
                 QApplication.style().drawControl(QStyle.CE_ProgressBar, options, painter)
