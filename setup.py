@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from distutils.core import setup
 
@@ -13,7 +13,7 @@ setup(name = 'm4baker',
         author_email = 'kilian.lackhove@gmail.com',
         url='http://code.google.com/p/m4baker/',
         classifiers = [
-              'Programming Language :: Python :: 2',
+              'Programming Language :: Python :: 3',
            ],
         packages = ['m4baker',],
         package_dir = {'m4baker': 'src',},

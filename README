@@ -6,7 +6,7 @@ Dependencies
 
 Before installing M4Baker, install following dependencies:
 
- * Python 2.6 or newer
+ * Python 3
    http://python.org
 
  * PyQt 4.6 with Qt 4.5 or newer
@@ -29,7 +29,7 @@ Installation
 
 After installing the dependencies, install M4b :
 
-  python setup.py install --optimize=1
+  python3 setup.py install --optimize=1
 
 This will automatically install all required Python modules. The desktop file and 
 icon wil be installed to /usr/share/applications and /usr/share/pixmaps, respectively.
